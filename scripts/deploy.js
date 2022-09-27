@@ -1,6 +1,9 @@
+/* global ethers */
+/* eslint prefer-const: "off" */
+
 const { getSelectors, FacetCutAction } = require('./libraries/diamond.js')
-const { ethers } = require('hardhat')
-async function deployDiamond() {
+
+async function deployDiamond () {
   const accounts = await ethers.getSigners()
   const contractOwner = accounts[0]
 
@@ -12,10 +15,7 @@ async function deployDiamond() {
 
   // deploy Diamond
   const Diamond = await ethers.getContractFactory('Diamond')
-  const diamond = await Diamond.deploy(
-    contractOwner.address,
-    diamondCutFacet.address,
-  )
+  const diamond = await Diamond.deploy(contractOwner.address, diamondCutFacet.address, "KINGS Token", "KGT", 10000)
   await diamond.deployed()
   console.log('Diamond deployed:', diamond.address)
 
@@ -30,7 +30,11 @@ async function deployDiamond() {
   // deploy facets
   console.log('')
   console.log('Deploying facets')
-  const FacetNames = ['DiamondLoupeFacet', 'OwnershipFacet']
+  const FacetNames = [
+    'DiamondLoupeFacet',
+    'OwnershipFacet',
+    'ERC20Token'
+  ]
   const cut = []
   for (const FacetName of FacetNames) {
     const Facet = await ethers.getContractFactory(FacetName)
@@ -40,7 +44,7 @@ async function deployDiamond() {
     cut.push({
       facetAddress: facet.address,
       action: FacetCutAction.Add,
-      functionSelectors: getSelectors(facet),
+      functionSelectors: getSelectors(facet)
     })
   }
 
@@ -60,6 +64,37 @@ async function deployDiamond() {
   }
   console.log('Completed diamond cut')
   return diamond.address
+
+    //interact with the contract
+    // const res = await ethers.getContractFactory("ERC20Token");
+    // const interact = await res.attach(diamond.address);
+
+
+    // const _totalSupply = await interact.totalSupply()
+    // const tokenName = await interact.name()
+
+    // const Amount = ethers.utils.parseEther("1000000");
+
+    // const minttoken = await interact.mint(Amount)
+    // const bal = await interact.balanceOf(contractOwner.address)
+    // const CIRCULATINGSUPPLY = await interact.circulatingSupply()
+   
+    // console.log("result: ", Number(_totalSupply))
+    // console.log("Token Name: ", tokenName)
+    // console.log("minted: ", minttoken)
+    // console.log("user balance: ", Number(bal))
+    // console.log("CIRCULATINGSUPPLY: ", Number(CIRCULATINGSUPPLY))
+
+    //Deployment result
+// DiamondCutFacet deployed: 0xDb3E98eE70560171a7B4F44E5CA43f5Dec5DAf08
+// Diamond deployed: 0xC0acb216BA2863f30b627512d5a80568BDF2F482
+// DiamondInit deployed: 0xFea77f177Bd28D45d434b2B35A548AC6D650EdC2
+
+// Deploying facets
+// DiamondLoupeFacet deployed: 0x011ebf60Ea828ec66C2ED546FfBf7555b3A4F3cd
+// OwnershipFacet deployed: 0xe4C4509bcF1614aa97289E7a13d0C2f99E3d95d0
+// ERC20Token deployed: 0x47E3Ef42E65b0A45a6BbbEC0CAAC1Ed0380ADF90
+
 }
 
 // We recommend this pattern to be able to use async/await everywhere
@@ -67,7 +102,7 @@ async function deployDiamond() {
 if (require.main === module) {
   deployDiamond()
     .then(() => process.exit(0))
-    .catch((error) => {
+    .catch(error => {
       console.error(error)
       process.exit(1)
     })

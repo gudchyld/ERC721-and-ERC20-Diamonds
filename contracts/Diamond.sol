@@ -8,23 +8,35 @@ pragma solidity ^0.8.0;
 * Implementation of a diamond.
 /******************************************************************************/
 
-import {LibDiamond} from "./libraries/LibDiamond.sol";
-import {IDiamondCut} from "./interfaces/IDiamondCut.sol";
+import { LibDiamond } from "./libraries/LibDiamond.sol";
+import { IDiamondCut } from "./interfaces/IDiamondCut.sol";
+import { TokenStorage } from "./libraries/LibERC20.sol";
+import { ERC20Token } from "../contracts/facets/ERC20Token.sol";
 
-contract Diamond {
-    constructor(address _contractOwner, address _diamondCutFacet) payable {
+contract Diamond {   
+    TokenStorage internal s; 
+    
+    constructor(address _contractOwner, address _diamondCutFacet, string memory name_, string memory symbol_, uint totalSupply_) payable {        
         LibDiamond.setContractOwner(_contractOwner);
+        
+
 
         // Add the diamondCut external function from the diamondCutFacet
         IDiamondCut.FacetCut[] memory cut = new IDiamondCut.FacetCut[](1);
         bytes4[] memory functionSelectors = new bytes4[](1);
         functionSelectors[0] = IDiamondCut.diamondCut.selector;
         cut[0] = IDiamondCut.FacetCut({
-            facetAddress: _diamondCutFacet,
-            action: IDiamondCut.FacetCutAction.Add,
+            facetAddress: _diamondCutFacet, 
+            action: IDiamondCut.FacetCutAction.Add, 
             functionSelectors: functionSelectors
         });
-        LibDiamond.diamondCut(cut, address(0), "");
+        LibDiamond.diamondCut(cut, address(0), "");  
+        
+        s._name = name_;
+        s._symbol = symbol_;
+        s._totalSupply = totalSupply_ * 1e18;
+        
+
     }
 
     // Find facet for function that is called and execute the
@@ -49,18 +61,13 @@ contract Diamond {
             returndatacopy(0, 0, returndatasize())
             // return any return value or error back to the caller
             switch result
-            case 0 {
-                revert(0, returndatasize())
-            }
-            default {
-                return(0, returndatasize())
-            }
+                case 0 {
+                    revert(0, returndatasize())
+                }
+                default {
+                    return(0, returndatasize())
+                }
         }
-    }
-
-    //immutable function example
-    function example() public pure returns (string memory) {
-        return "THIS IS AN EXAMPLE OF AN IMMUTABLE FUNCTION";
     }
 
     receive() external payable {}
